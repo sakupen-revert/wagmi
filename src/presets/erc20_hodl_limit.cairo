@@ -1,9 +1,9 @@
 #[starknet::contract]
 mod ERC20HodlLimitContract {
     use core::debug::PrintTrait;
-use starknet::ContractAddress;
+    use starknet::ContractAddress;
     use openzeppelin::token::erc20::interface::IERC20Metadata;
-    use openzeppelin::token::erc20::interface::{ IERC20, IERC20CamelOnly };
+    use openzeppelin::token::erc20::interface::{IERC20, IERC20CamelOnly};
     use openzeppelin::access::ownable::interface::IOwnable;
     use wagmi::wagmi::hodl_limit::HodlLimitComponent::InternalTrait as HodlLimitInternalTrait;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
@@ -26,7 +26,8 @@ use starknet::ContractAddress;
     impl SafeAllowanceImpl = ERC20Component::SafeAllowanceImpl<ContractState>;
     impl ERC20CamelOnlyImpl = ERC20Component::ERC20CamelOnlyImpl<ContractState>;
     #[abi(embed_v0)]
-    impl SafeAllowanceCamelImpl = ERC20Component::SafeAllowanceCamelImpl<ContractState>;
+    impl SafeAllowanceCamelImpl =
+        ERC20Component::SafeAllowanceCamelImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     // Ownable
@@ -34,7 +35,8 @@ use starknet::ContractAddress;
     #[abi(embed_v0)]
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     #[abi(embed_v0)]
-    impl OwnableCamelOnlyImpl = OwnableComponent::OwnableCamelOnlyImpl<ContractState>;
+    impl OwnableCamelOnlyImpl =
+        OwnableComponent::OwnableCamelOnlyImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     // Hodl Limit
@@ -120,7 +122,9 @@ use starknet::ContractAddress;
             self.erc20.balance_of(:account)
         }
 
-        fn allowance(self: @ContractState, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        fn allowance(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+        ) -> u256 {
             self.erc20.allowance(:owner, :spender)
         }
 
@@ -132,7 +136,10 @@ use starknet::ContractAddress;
         }
 
         fn transfer_from(
-            ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
         ) -> bool {
             self._check_hodl_limit(:sender, :recipient, :amount);
 
@@ -155,7 +162,10 @@ use starknet::ContractAddress;
         }
 
         fn transferFrom(
-            ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
         ) -> bool {
             self._check_hodl_limit(:sender, :recipient, :amount);
 

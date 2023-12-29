@@ -1,7 +1,7 @@
 #[starknet::component]
 mod HodlLimitComponent {
     use core::debug::PrintTrait;
-use starknet::ContractAddress;
+    use starknet::ContractAddress;
     use openzeppelin::token::erc20::interface::IERC20;
     use openzeppelin::token::erc20::ERC20Component;
 
@@ -25,10 +25,8 @@ use starknet::ContractAddress;
 
     #[embeddable_as(HodlLimitImpl)]
     impl HodlLimit<
-        TContractState,
-        +HasComponent<TContractState>,
-        +Drop<TContractState>,
-    > of interface::IHodlLimit::<ComponentState<TContractState>> {
+        TContractState, +HasComponent<TContractState>, +Drop<TContractState>,
+    > of interface::IHodlLimit<ComponentState<TContractState>> {
         fn is_pool(self: @ComponentState<TContractState>, pool_address: ContractAddress) -> bool {
             self._pool_addresses.read(pool_address)
         }

@@ -1,4 +1,4 @@
-use starknet::{ ContractAddress, contract_address_const };
+use starknet::{ContractAddress, contract_address_const};
 
 const NAME: felt252 = 'NAME';
 const SYMBOL: felt252 = 'SYMBOL';

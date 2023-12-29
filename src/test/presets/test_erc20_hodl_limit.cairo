@@ -1,11 +1,11 @@
-use starknet::{ ContractAddress, testing };
+use starknet::{ContractAddress, testing};
 use openzeppelin::utils::serde::SerializedAppend;
 use openzeppelin::token::erc20::ERC20Component::Transfer;
 use openzeppelin::access::ownable::OwnableComponent::OwnershipTransferred;
 
 use wagmi::wagmi::interface::IHodlLimit;
 use wagmi::presets::erc20_hodl_limit::ERC20HodlLimitContract;
-use wagmi::presets::interface::{ ERC20HodlLimitABIDispatcher, ERC20HodlLimitABIDispatcherTrait };
+use wagmi::presets::interface::{ERC20HodlLimitABIDispatcher, ERC20HodlLimitABIDispatcherTrait};
 use wagmi::test::utils;
 use wagmi::test::utils::constants;
 
@@ -220,17 +220,17 @@ fn test_transfer() {
     let mut dispatcher = setup_dispatcher();
 
     // transfer
-    assert(dispatcher.transfer(recipient: constants::RECIPIENT(), amount: constants::VALUE), 'Should return true');
+    assert(
+        dispatcher.transfer(recipient: constants::RECIPIENT(), amount: constants::VALUE),
+        'Should return true'
+    );
 
     // check balances
     assert(
         dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
         'Should equal SUPPLY - VALUE'
     );
-    assert(
-        dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE,
-        'Should equal VALUE'
-    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
 }
 
 #[test]
@@ -246,10 +246,15 @@ fn test_transfer_with_hodl_limit() {
     dispatcher.renounce_ownership();
 
     // transfer
-    assert(dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value), 'Should return true');
+    assert(
+        dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value), 'Should return true'
+    );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
 }
 
@@ -267,7 +272,9 @@ fn test_transfer_with_hodl_limit_above() {
     dispatcher.renounce_ownership();
 
     // transfer
-    assert(dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value), 'Should return true');
+    assert(
+        dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value), 'Should return true'
+    );
 }
 
 #[test]
@@ -280,10 +287,15 @@ fn test_transfer_with_hodl_limit_above_from_owner() {
     dispatcher.enable_hodl_limit();
 
     // transfer
-    assert(dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value), 'Should return true');
+    assert(
+        dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value), 'Should return true'
+    );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
 }
 
@@ -306,7 +318,10 @@ fn test_transfer_with_hodl_limit_above_to_pool() {
     assert(dispatcher.transfer(recipient: constants::POOL(), amount: value), 'Should return true');
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::POOL()) == value, 'Should equal VALUE');
 }
 
@@ -324,11 +339,12 @@ fn test_transfer_from() {
 
     // transfer
     assert(
-        dispatcher.transfer_from(
-            sender: constants::OWNER(),
-            recipient: constants::RECIPIENT(),
-            amount: constants::VALUE
-        ),
+        dispatcher
+            .transfer_from(
+                sender: constants::OWNER(),
+                recipient: constants::RECIPIENT(),
+                amount: constants::VALUE
+            ),
         'Should return true'
     );
 
@@ -337,10 +353,7 @@ fn test_transfer_from() {
         dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
         'Should equal SUPPLY - VALUE'
     );
-    assert(
-        dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE,
-        'Should equal VALUE'
-    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
 }
 
 #[test]
@@ -360,12 +373,18 @@ fn test_transfer_from_with_hodl_limit() {
 
     // transfer
     assert(
-        dispatcher.transfer_from(sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value),
+        dispatcher
+            .transfer_from(
+                sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value
+            ),
         'Should return true'
     );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
 }
 
@@ -387,7 +406,10 @@ fn test_transfer_from_with_hodl_limit_above() {
 
     // transfer
     assert(
-        dispatcher.transfer_from(sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value),
+        dispatcher
+            .transfer_from(
+                sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value
+            ),
         'Should return true'
     );
 }
@@ -406,12 +428,18 @@ fn test_transfer_from_with_hodl_limit_above_from_owner() {
 
     // transfer
     assert(
-        dispatcher.transfer_from(sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value),
+        dispatcher
+            .transfer_from(
+                sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value
+            ),
         'Should return true'
     );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
 }
 
@@ -435,12 +463,16 @@ fn test_transfer_from_with_hodl_limit_above_to_pool() {
 
     // transfer
     assert(
-        dispatcher.transfer_from(sender: constants::OWNER(), recipient: constants::POOL(), amount: value),
+        dispatcher
+            .transfer_from(sender: constants::OWNER(), recipient: constants::POOL(), amount: value),
         'Should return true'
     );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::POOL()) == value, 'Should equal VALUE');
 }
 
@@ -458,11 +490,12 @@ fn test_transferFrom() {
 
     // transfer
     assert(
-        dispatcher.transferFrom(
-            sender: constants::OWNER(),
-            recipient: constants::RECIPIENT(),
-            amount: constants::VALUE
-        ),
+        dispatcher
+            .transferFrom(
+                sender: constants::OWNER(),
+                recipient: constants::RECIPIENT(),
+                amount: constants::VALUE
+            ),
         'Should return true'
     );
 
@@ -471,10 +504,7 @@ fn test_transferFrom() {
         dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
         'Should equal SUPPLY - VALUE'
     );
-    assert(
-        dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE,
-        'Should equal VALUE'
-    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
 }
 
 #[test]
@@ -494,12 +524,18 @@ fn test_transferFrom_with_hodl_limit() {
 
     // transfer
     assert(
-        dispatcher.transferFrom(sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value),
+        dispatcher
+            .transferFrom(
+                sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value
+            ),
         'Should return true'
     );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
 }
 
@@ -521,7 +557,10 @@ fn test_transferFrom_with_hodl_limit_above() {
 
     // transfer
     assert(
-        dispatcher.transferFrom(sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value),
+        dispatcher
+            .transferFrom(
+                sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value
+            ),
         'Should return true'
     );
 }
@@ -540,12 +579,18 @@ fn test_transferFrom_with_hodl_limit_above_from_owner() {
 
     // transfer
     assert(
-        dispatcher.transferFrom(sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value),
+        dispatcher
+            .transferFrom(
+                sender: constants::OWNER(), recipient: constants::RECIPIENT(), amount: value
+            ),
         'Should return true'
     );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
 }
 
@@ -569,12 +614,16 @@ fn test_transferFrom_with_hodl_limit_above_to_pool() {
 
     // transfer
     assert(
-        dispatcher.transferFrom(sender: constants::OWNER(), recipient: constants::POOL(), amount: value),
+        dispatcher
+            .transferFrom(sender: constants::OWNER(), recipient: constants::POOL(), amount: value),
         'Should return true'
     );
 
     // check balances
-    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value, 'Should equal SUPPLY - VALUE');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - value,
+        'Should equal SUPPLY - VALUE'
+    );
     assert(dispatcher.balance_of(constants::POOL()) == value, 'Should equal VALUE');
 }
 
@@ -582,7 +631,9 @@ fn test_transferFrom_with_hodl_limit_above_to_pool() {
 // Helpers
 //
 
-fn assert_event_transfer(contract: ContractAddress, from: ContractAddress, to: ContractAddress, value: u256) {
+fn assert_event_transfer(
+    contract: ContractAddress, from: ContractAddress, to: ContractAddress, value: u256
+) {
     let event = utils::pop_log::<Transfer>(contract).unwrap();
     assert(event.from == from, 'Invalid `from`');
     assert(event.to == to, 'Invalid `to`');
@@ -596,9 +647,7 @@ fn assert_event_transfer(contract: ContractAddress, from: ContractAddress, to: C
 }
 
 fn assert_event_ownership_transferred(
-    contract: ContractAddress,
-    previous_owner: ContractAddress,
-    new_owner: ContractAddress
+    contract: ContractAddress, previous_owner: ContractAddress, new_owner: ContractAddress
 ) {
     let event = utils::pop_log::<OwnershipTransferred>(contract).unwrap();
     assert(event.previous_owner == previous_owner, 'Invalid `previous_owner`');

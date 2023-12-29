@@ -1,6 +1,6 @@
 mod constants;
 
-use starknet::{ ContractAddress, testing };
+use starknet::{ContractAddress, testing};
 
 fn deploy(contract_class_hash: felt252, calldata: Array<felt252>) -> ContractAddress {
     let (address, _) = starknet::deploy_syscall(
