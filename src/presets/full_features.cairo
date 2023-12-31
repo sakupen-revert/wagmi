@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod ERC20HodlLimitContract {
+mod FullFeaturesContract {
     use core::debug::PrintTrait;
     use starknet::ContractAddress;
     use openzeppelin::token::erc20::interface::IERC20Metadata;

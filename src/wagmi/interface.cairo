@@ -8,6 +8,6 @@ trait IHodlLimit<TState> {
 
 #[starknet::interface]
 trait ISnapshotLoader<TState> {
-    fn is_pool(self: @TState, pool_address: ContractAddress) -> bool;
-    fn is_hodl_limit_enabled(self: @TState) -> bool;
+    fn launched(self: @TState) -> bool;
+    fn vested_balance(self: @TState, account: ContractAddress) -> u256;
 }
