@@ -1,2 +1,2 @@
-mod erc20_hodl_limit;
+mod full_features;
 mod interface;

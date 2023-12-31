@@ -4,8 +4,8 @@ use openzeppelin::token::erc20::ERC20Component::Transfer;
 use openzeppelin::access::ownable::OwnableComponent::OwnershipTransferred;
 
 use wagmi::wagmi::interface::IHodlLimit;
-use wagmi::presets::erc20_hodl_limit::ERC20HodlLimitContract;
-use wagmi::presets::interface::{ERC20HodlLimitABIDispatcher, ERC20HodlLimitABIDispatcherTrait};
+use wagmi::presets::full_features::FullFeaturesContract;
+use wagmi::presets::interface::{FullFeaturesABIDispatcher, FullFeaturesABIDispatcherTrait};
 use wagmi::test::utils;
 use wagmi::test::utils::constants;
 
@@ -13,7 +13,7 @@ use wagmi::test::utils::constants;
 // Tests
 //
 
-fn setup_dispatcher_with_event() -> ERC20HodlLimitABIDispatcher {
+fn setup_dispatcher_with_event() -> FullFeaturesABIDispatcher {
     let mut calldata = array![];
 
     calldata.append_serde(constants::NAME);
@@ -24,12 +24,12 @@ fn setup_dispatcher_with_event() -> ERC20HodlLimitABIDispatcher {
     // execute as owner
     testing::set_contract_address(constants::OWNER());
 
-    let address = utils::deploy(ERC20HodlLimitContract::TEST_CLASS_HASH, calldata);
+    let address = utils::deploy(FullFeaturesContract::TEST_CLASS_HASH, calldata);
 
-    ERC20HodlLimitABIDispatcher { contract_address: address }
+    FullFeaturesABIDispatcher { contract_address: address }
 }
 
-fn setup_dispatcher() -> ERC20HodlLimitABIDispatcher {
+fn setup_dispatcher() -> FullFeaturesABIDispatcher {
     let dispatcher = setup_dispatcher_with_event();
     utils::drop_event(dispatcher.contract_address);
     dispatcher

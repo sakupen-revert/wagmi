@@ -78,7 +78,9 @@ mod SnapshotLoaderComponent {
             self._vesting_period.write(vesting_period);
         }
 
-        fn _mint(ref self: ComponentState<TContractState>, recipient: ContractAddress, amount: u256) {
+        fn _mint(
+            ref self: ComponentState<TContractState>, recipient: ContractAddress, amount: u256
+        ) {
             let mut erc20_component = get_dep_component_mut!(ref self, ERC20);
 
             // check token is not already launched
@@ -92,11 +94,11 @@ mod SnapshotLoaderComponent {
             erc20_component._mint(:recipient, :amount);
         }
 
-        fn _check_for_vesting(ref self: ComponentState<TContractState>, recipient: ContractAddress) {
+        fn _check_for_vesting(ref self: ComponentState<TContractState>, account: ContractAddress) {
             let erc20_component = get_dep_component!(self, ERC20);
 
-            let vested_balance = self.vested_balance(account: recipient);
-            let balance = erc20_component.balance_of(account: recipient);
+            let vested_balance = self.vested_balance(:account);
+            let balance = erc20_component.balance_of(:account);
 
             assert(vested_balance >= balance, Errors::VESTING_LIMIT_REACHED);
         }

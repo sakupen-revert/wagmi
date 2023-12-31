@@ -5,15 +5,19 @@ mod FullFeaturesContract {
     use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::interface::{IERC20, IERC20CamelOnly};
     use openzeppelin::access::ownable::interface::IOwnable;
-    use wagmi::wagmi::hodl_limit::HodlLimitComponent::InternalTrait as HodlLimitInternalTrait;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
     use openzeppelin::access::ownable::OwnableComponent;
 
     use wagmi::wagmi::hodl_limit::HodlLimitComponent;
+    use wagmi::wagmi::snapshot_loader::SnapshotLoaderComponent;
+
+    use wagmi::wagmi::hodl_limit::HodlLimitComponent::InternalTrait as HodlLimitInternalTrait;
+    use wagmi::wagmi::snapshot_loader::SnapshotLoaderComponent::InternalTrait as SnapshotLoaderInternalTrait;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     component!(path: HodlLimitComponent, storage: hodl_limit, event: HodlLimitEvent);
+    component!(path: SnapshotLoaderComponent, storage: snapshot_loader, event: SnapshotLoaderEvent);
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
 
@@ -45,6 +49,16 @@ mod FullFeaturesContract {
     impl HodlLimitImpl = HodlLimitComponent::HodlLimitImpl<ContractState>;
     impl HodlLimitInternalImpl = HodlLimitComponent::InternalImpl<ContractState>;
 
+    // Hodl Limit
+
+    #[abi(embed_v0)]
+    impl SnapshotLoaderImpl =
+        SnapshotLoaderComponent::SnapshotLoaderImpl<ContractState>;
+    impl SnapshotLoaderInternalImpl = SnapshotLoaderComponent::InternalImpl<ContractState>;
+
+    //
+    // Storage
+    //
 
     #[storage]
     struct Storage {
@@ -54,7 +68,13 @@ mod FullFeaturesContract {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         hodl_limit: HodlLimitComponent::Storage,
+        #[substorage(v0)]
+        snapshot_loader: SnapshotLoaderComponent::Storage,
     }
+
+    //
+    // Events
+    //
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -65,6 +85,8 @@ mod FullFeaturesContract {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         HodlLimitEvent: HodlLimitComponent::Event,
+        #[flat]
+        SnapshotLoaderEvent: SnapshotLoaderComponent::Event,
     }
 
     /// Sets the token `name` and `symbol`.
@@ -109,6 +131,24 @@ mod FullFeaturesContract {
     }
 
     //
+    // Snapshot Loader
+    //
+
+    #[external(v0)]
+    fn launch(ref self: ContractState, vesting_period: u64) {
+        self.ownable.assert_only_owner();
+
+        self.snapshot_loader._launch(:vesting_period);
+    }
+
+    #[external(v0)]
+    fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
+        self.ownable.assert_only_owner();
+
+        self.snapshot_loader._mint(:recipient, :amount);
+    }
+
+    //
     // IERC20
     //
 
@@ -132,7 +172,12 @@ mod FullFeaturesContract {
             let sender = starknet::get_caller_address();
             self._check_hodl_limit(:sender, :recipient, :amount);
 
-            self.erc20.transfer(:recipient, :amount)
+            let ret = self.erc20.transfer(:recipient, :amount);
+
+            // vesting check
+            self.snapshot_loader._check_for_vesting(account: recipient);
+
+            ret
         }
 
         fn transfer_from(
@@ -143,7 +188,12 @@ mod FullFeaturesContract {
         ) -> bool {
             self._check_hodl_limit(:sender, :recipient, :amount);
 
-            self.erc20.transfer_from(:sender, :recipient, :amount)
+            let ret = self.erc20.transfer_from(:sender, :recipient, :amount);
+
+            // vesting check
+            self.snapshot_loader._check_for_vesting(account: recipient);
+
+            ret
         }
 
         fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
@@ -169,7 +219,12 @@ mod FullFeaturesContract {
         ) -> bool {
             self._check_hodl_limit(:sender, :recipient, :amount);
 
-            self.erc20.transferFrom(:sender, :recipient, :amount)
+            let ret = self.erc20.transferFrom(:sender, :recipient, :amount);
+
+            // vesting check
+            self.snapshot_loader._check_for_vesting(account: recipient);
+
+            ret
         }
     }
 

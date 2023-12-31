@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait ERC20HodlLimitABI<TState> {
+trait FullFeaturesABI<TState> {
     // IERC20
     fn total_supply(self: @TState) -> u256;
     fn balance_of(self: @TState, account: ContractAddress) -> u256;
@@ -49,4 +49,10 @@ trait ERC20HodlLimitABI<TState> {
     fn add_pool(ref self: TState, pool_address: ContractAddress);
     fn enable_hodl_limit(ref self: TState);
     fn disable_hodl_limit(ref self: TState);
+
+    // Snapshot Loader
+    fn launched(self: @TState) -> bool;
+    fn vested_balance(self: @TState, account: ContractAddress) -> u256;
+    fn launch(ref self: TState, vesting_period: u64);
+    fn mint(ref self: TState, recipient: ContractAddress, amount: u256);
 }
