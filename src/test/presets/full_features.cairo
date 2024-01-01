@@ -1,3 +1,4 @@
+use core::debug::PrintTrait;
 use core::zeroable::Zeroable;
 use starknet::{ContractAddress, testing};
 use openzeppelin::utils::serde::SerializedAppend;
@@ -739,7 +740,7 @@ fn test_mint_from_zero() {
     // execute as zero
     testing::set_contract_address(constants::ZERO());
 
-    dispatcher.mint(recipient: constants::OTHER(), amount: constants::VALUE);
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: constants::VALUE);
 }
 
 #[test]
@@ -751,7 +752,151 @@ fn test_mint_from_unauthorized() {
     // execute as other
     testing::set_contract_address(constants::OTHER());
 
-    dispatcher.mint(recipient: constants::OTHER(), amount: constants::VALUE);
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: constants::VALUE);
+}
+
+//
+// Vested balance
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_vested_balance_of_before_launch() {
+    let mut dispatcher = setup_dispatcher();
+    let value = constants::VALUE;
+
+    // check vested balance before
+    assert(dispatcher.balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+
+    // mint
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: value);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
+    assert(dispatcher.balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_vested_balance_of() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // check vested balance before
+    assert(dispatcher.balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+
+    // mint
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
+    assert(dispatcher.balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+
+    // update timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP + 1);
+
+    // check vested balance after
+    assert(
+        dispatcher.vested_balance_of(constants::RECIPIENT()) == value / 10 * 9,
+        'Should equal VALUE / 10 * 9'
+    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 10, 'Should be VALUE / 10');
+
+    // update timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // check vested balance after
+    assert(
+        dispatcher.vested_balance_of(constants::RECIPIENT()) == value / 2, 'Should equal VALUE / 2'
+    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 2, 'Should be VALUE / 10');
+
+    // update timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP + 9);
+
+    // check vested balance after
+    assert(
+        dispatcher.vested_balance_of(constants::RECIPIENT()) == value / 10,
+        'Should equal VALUE / 10'
+    );
+    assert(
+        dispatcher.balance_of(constants::RECIPIENT()) == value / 10 * 9, 'Should be VALUE / 10 * 9'
+    );
+
+    // update timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP + 10);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should be VALUE');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_vested_balance_of_owner() {
+    let mut dispatcher = setup_dispatcher();
+
+    // check vested balance before
+    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY, 'Should equal SUPPLY');
+    assert(dispatcher.vested_balance_of(constants::OWNER()).is_zero(), 'Should be null');
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::OWNER()).is_zero(), 'Should be null');
+    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY, 'Should equal SUPPLY');
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_vested_balance_of_owner_after_mint() {
+    let mut dispatcher = setup_dispatcher();
+    let value = constants::VALUE;
+
+    // check vested balance before
+    assert(dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY, 'Should equal SUPPLY');
+    assert(dispatcher.vested_balance_of(constants::OWNER()).is_zero(), 'Should be null');
+
+    // mint
+    dispatcher.mint(recipient: constants::OWNER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::OWNER()).is_zero(), 'Should be null');
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY + value,
+        'Should equal SUPPLY + VALUE'
+    );
+}
+
+#[test]
+#[available_gas(20000000)]
+fn test_vested_balance_of_pool_after_mint() {
+    let mut dispatcher = setup_dispatcher();
+    let value = constants::VALUE;
+
+    // add pool
+    dispatcher.add_pool(constants::POOL());
+
+    // check vested balance before
+    assert(dispatcher.balance_of(constants::POOL()).is_zero(), 'Should be null');
+    assert(dispatcher.vested_balance_of(constants::POOL()).is_zero(), 'Should be null');
+
+    // mint
+    dispatcher.mint(recipient: constants::POOL(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::POOL()).is_zero(), 'Should be null');
+    assert(dispatcher.balance_of(constants::POOL()) == value, 'Should equal VALUE');
 }
 
 //

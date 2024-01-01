@@ -31,10 +31,15 @@ mod SnapshotLoaderComponent {
         TContractState, +HasComponent<TContractState>, +Drop<TContractState>,
     > of interface::ISnapshotLoader<ComponentState<TContractState>> {
         fn launched(self: @ComponentState<TContractState>) -> bool {
-            self._end_of_vesting.read().is_non_zero() // cannot be null if launched contrary to `_vesting_period`
+            self
+                ._end_of_vesting
+                .read()
+                .is_non_zero() // cannot be null if launched contrary to `_vesting_period`
         }
 
-        fn vested_balance(self: @ComponentState<TContractState>, account: ContractAddress) -> u256 {
+        fn vested_balance_of(
+            self: @ComponentState<TContractState>, account: ContractAddress
+        ) -> u256 {
             let timestamp = get_block_timestamp();
 
             let end_of_vesting = self._end_of_vesting.read();
@@ -82,7 +87,10 @@ mod SnapshotLoaderComponent {
         }
 
         fn _mint(
-            ref self: ComponentState<TContractState>, recipient: ContractAddress, amount: u256
+            ref self: ComponentState<TContractState>,
+            with_vesting: bool,
+            recipient: ContractAddress,
+            amount: u256
         ) {
             let mut erc20_component = get_dep_component_mut!(ref self, ERC20);
 
@@ -90,8 +98,10 @@ mod SnapshotLoaderComponent {
             assert(!self.launched(), Errors::ALREADY_LAUNCHED);
 
             // vest tokens
-            let current_vested_balance = self._vested_balances.read(recipient);
-            self._vested_balances.write(recipient, current_vested_balance + amount);
+            if (with_vesting) {
+                let current_vested_balance = self._vested_balances.read(recipient);
+                self._vested_balances.write(recipient, current_vested_balance + amount);
+            }
 
             // mint tokens
             erc20_component._mint(:recipient, :amount);
@@ -100,7 +110,7 @@ mod SnapshotLoaderComponent {
         fn _check_for_vesting(ref self: ComponentState<TContractState>, account: ContractAddress) {
             let erc20_component = get_dep_component!(self, ERC20);
 
-            let vested_balance = self.vested_balance(:account);
+            let vested_balance = self.vested_balance_of(:account);
             let balance = erc20_component.balance_of(:account);
 
             assert(balance >= vested_balance, Errors::VESTING_LIMIT_REACHED);

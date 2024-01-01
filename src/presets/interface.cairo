@@ -52,7 +52,7 @@ trait FullFeaturesABI<TState> {
 
     // Snapshot Loader
     fn launched(self: @TState) -> bool;
-    fn vested_balance(self: @TState, account: ContractAddress) -> u256;
+    fn vested_balance_of(self: @TState, account: ContractAddress) -> u256;
     fn launch(ref self: TState, vesting_period: u64);
     fn mint(ref self: TState, recipient: ContractAddress, amount: u256);
 }

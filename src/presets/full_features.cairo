@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod FullFeaturesContract {
     use wagmi::wagmi::interface::IHodlLimit;
-use starknet::ContractAddress;
+    use starknet::ContractAddress;
     use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::interface::{IERC20, IERC20CamelOnly};
     use openzeppelin::access::ownable::interface::IOwnable;
@@ -145,7 +145,7 @@ use starknet::ContractAddress;
     fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
         self.ownable.assert_only_owner();
 
-        self.snapshot_loader._mint(:recipient, :amount);
+        self._mint(:recipient, :amount);
     }
 
     //
@@ -159,7 +159,7 @@ use starknet::ContractAddress;
         }
 
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.balance_of(:account) - self.vested_balance(:account)
+            self.erc20.balance_of(:account) - self.vested_balance_of(:account)
         }
 
         fn allowance(
@@ -177,7 +177,7 @@ use starknet::ContractAddress;
             self._check_hodl_limit(:sender, :recipient);
 
             // vesting check
-            self._check_for_vesting(:sender);
+            self.snapshot_loader._check_for_vesting(account: sender);
 
             ret
         }
@@ -194,7 +194,7 @@ use starknet::ContractAddress;
             self._check_hodl_limit(:sender, :recipient);
 
             // vesting check
-            self._check_for_vesting(:sender);
+            self.snapshot_loader._check_for_vesting(account: sender);
 
             ret
         }
@@ -211,7 +211,7 @@ use starknet::ContractAddress;
         }
 
         fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.balanceOf(:account) - self.vested_balance(:account)
+            self.erc20.balanceOf(:account) - self.vested_balance_of(:account)
         }
 
         fn transferFrom(
@@ -220,14 +220,13 @@ use starknet::ContractAddress;
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-
             let ret = self.erc20.transferFrom(:sender, :recipient, :amount);
 
             // hodl limit check
             self._check_hodl_limit(:sender, :recipient);
 
             // vesting check
-            self._check_for_vesting(:sender);
+            self.snapshot_loader._check_for_vesting(account: sender);
 
             ret
         }
@@ -240,9 +239,7 @@ use starknet::ContractAddress;
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn _check_hodl_limit(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
+            ref self: ContractState, sender: ContractAddress, recipient: ContractAddress,
         ) {
             let sender_is_owner = self.ownable.owner() == sender;
 
@@ -252,14 +249,15 @@ use starknet::ContractAddress;
             }
         }
 
-        fn _check_for_vesting(ref self: ContractState, sender: ContractAddress) {
-            let sender_is_owner = self.ownable.owner() == sender;
-            let sender_is_pool = self.is_pool(sender);
+        fn _mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
+            let recipient_is_owner = self.ownable.owner() == recipient;
+            let recipient_is_pool = self.is_pool(recipient);
 
-            // check hodl limit
-            if (!sender_is_owner && !sender_is_pool) {
-                self.snapshot_loader._check_for_vesting(account: sender);
-            }
+            self
+                .snapshot_loader
+                ._mint(
+                    with_vesting: !recipient_is_owner && !recipient_is_pool, :recipient, :amount
+                );
         }
     }
 }

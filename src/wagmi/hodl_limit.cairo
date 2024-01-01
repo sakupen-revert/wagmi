@@ -48,8 +48,7 @@ mod HodlLimitComponent {
         impl ERC20: ERC20Component::HasComponent<TContractState>,
     > of InternalTrait<TContractState> {
         fn _check_hodl_limit(
-            ref self: ComponentState<TContractState>,
-            recipient: ContractAddress,
+            ref self: ComponentState<TContractState>, recipient: ContractAddress,
         ) {
             let is_hodl_limit_enabled = self._is_hodl_limit_enabled.read();
 

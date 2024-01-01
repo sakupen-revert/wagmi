@@ -9,5 +9,5 @@ trait IHodlLimit<TState> {
 #[starknet::interface]
 trait ISnapshotLoader<TState> {
     fn launched(self: @TState) -> bool;
-    fn vested_balance(self: @TState, account: ContractAddress) -> u256;
+    fn vested_balance_of(self: @TState, account: ContractAddress) -> u256;
 }
