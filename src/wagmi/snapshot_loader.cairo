@@ -18,8 +18,8 @@ mod SnapshotLoaderComponent {
     }
 
     mod Errors {
-        const ALREADY_LAUNCHED: felt252 = 'token already launched';
-        const VESTING_LIMIT_REACHED: felt252 = 'vesting limit reached';
+        const ALREADY_LAUNCHED: felt252 = 'Token already launched';
+        const VESTING_LIMIT_REACHED: felt252 = 'Vesting limit reached';
     }
 
     //
@@ -31,7 +31,7 @@ mod SnapshotLoaderComponent {
         TContractState, +HasComponent<TContractState>, +Drop<TContractState>,
     > of interface::ISnapshotLoader<ComponentState<TContractState>> {
         fn launched(self: @ComponentState<TContractState>) -> bool {
-            self._vesting_period.read().is_non_zero()
+            self._end_of_vesting.read().is_non_zero() // cannot be null if launched contrary to `_vesting_period`
         }
 
         fn vested_balance(self: @ComponentState<TContractState>, account: ContractAddress) -> u256 {
@@ -72,6 +72,9 @@ mod SnapshotLoaderComponent {
     > of InternalTrait<TContractState> {
         fn _launch(ref self: ComponentState<TContractState>, vesting_period: u64) {
             let timestamp = get_block_timestamp();
+
+            // check that its not already launched
+            assert(!self.launched(), Errors::ALREADY_LAUNCHED);
 
             // start vesting
             self._end_of_vesting.write(timestamp + vesting_period);

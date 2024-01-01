@@ -24,20 +24,32 @@ fn setup_dispatcher_with_event() -> FullFeaturesABIDispatcher {
     // execute as owner
     testing::set_contract_address(constants::OWNER());
 
+    // set timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP);
+
     let address = utils::deploy(FullFeaturesContract::TEST_CLASS_HASH, calldata);
 
-    let dispatcher = FullFeaturesABIDispatcher { contract_address: address };
-
-    // launch
-    testing::set_block_timestamp(constants::TIMESTAMP);
-    dispatcher.launch(vesting_period: 0);
-
-    dispatcher
+    FullFeaturesABIDispatcher { contract_address: address }
 }
 
 fn setup_dispatcher() -> FullFeaturesABIDispatcher {
     let dispatcher = setup_dispatcher_with_event();
+
+    // Drop events
     utils::drop_event(dispatcher.contract_address);
+
+    dispatcher
+}
+
+fn setup_launched_dispatcher() -> FullFeaturesABIDispatcher {
+    let dispatcher = setup_dispatcher_with_event();
+
+    // launch
+    dispatcher.launch(vesting_period: 0);
+
+    // Drop events
+    utils::drop_event(dispatcher.contract_address);
+
     dispatcher
 }
 
@@ -49,6 +61,8 @@ fn setup_dispatcher() -> FullFeaturesABIDispatcher {
 #[available_gas(2000000)]
 fn test_constructor() {
     let mut dispatcher = setup_dispatcher_with_event();
+
+    dispatcher.launch(vesting_period: 0);
 
     assert(dispatcher.name() == constants::NAME, 'Should be NAME');
     assert(dispatcher.symbol() == constants::SYMBOL, 'Should be SYMBOL');
@@ -79,7 +93,7 @@ fn test_constructor() {
 #[test]
 #[available_gas(20000000)]
 fn test_enable_hodl_limit() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     assert(!dispatcher.is_hodl_limit_enabled(), 'bad hodl limit status before');
 
@@ -92,7 +106,7 @@ fn test_enable_hodl_limit() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('Caller is the zero address', 'ENTRYPOINT_FAILED'))]
 fn test_enable_hodl_limit_from_zero() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // execute as zero
     testing::set_contract_address(constants::ZERO());
@@ -104,7 +118,7 @@ fn test_enable_hodl_limit_from_zero() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('Caller is not the owner', 'ENTRYPOINT_FAILED'))]
 fn test_enable_hodl_limit_from_unauthorized() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // execute as other
     testing::set_contract_address(constants::OTHER());
@@ -119,7 +133,7 @@ fn test_enable_hodl_limit_from_unauthorized() {
 #[test]
 #[available_gas(20000000)]
 fn test_disable_hodl_limit() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // enable hodl limit
     dispatcher.enable_hodl_limit();
@@ -135,7 +149,7 @@ fn test_disable_hodl_limit() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('Caller is the zero address', 'ENTRYPOINT_FAILED'))]
 fn test_disable_hodl_limit_from_zero() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // enable hodl limit
     dispatcher.enable_hodl_limit();
@@ -150,7 +164,7 @@ fn test_disable_hodl_limit_from_zero() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('Caller is not the owner', 'ENTRYPOINT_FAILED'))]
 fn test_disable_hodl_limit_from_unauthorized() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // enable hodl limit
     dispatcher.enable_hodl_limit();
@@ -168,7 +182,7 @@ fn test_disable_hodl_limit_from_unauthorized() {
 #[test]
 #[available_gas(20000000)]
 fn test_add_pool() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     assert(!dispatcher.is_pool(constants::OTHER_POOL()), 'bad pool status before');
 
@@ -180,7 +194,7 @@ fn test_add_pool() {
 #[test]
 #[available_gas(20000000)]
 fn test_add_multiple_pools() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     assert(!dispatcher.is_pool(constants::POOL()), 'bad pool status before');
     assert(!dispatcher.is_pool(constants::OTHER_POOL()), 'bad other pool status before');
@@ -196,7 +210,7 @@ fn test_add_multiple_pools() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('Caller is the zero address', 'ENTRYPOINT_FAILED'))]
 fn test_add_pool_from_zero() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // execute as zero
     testing::set_contract_address(constants::ZERO());
@@ -208,7 +222,7 @@ fn test_add_pool_from_zero() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('Caller is not the owner', 'ENTRYPOINT_FAILED'))]
 fn test_add_pool_from_unauthorized() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // execute as other
     testing::set_contract_address(constants::OTHER());
@@ -223,7 +237,7 @@ fn test_add_pool_from_unauthorized() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // transfer
     assert(
@@ -242,7 +256,7 @@ fn test_transfer() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_with_hodl_limit() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100; // 1%
 
     // enable hodl limit
@@ -268,7 +282,7 @@ fn test_transfer_with_hodl_limit() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('1% Hodl limit reached', 'ENTRYPOINT_FAILED'))]
 fn test_transfer_with_hodl_limit_above() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // enable hodl limit
@@ -286,7 +300,7 @@ fn test_transfer_with_hodl_limit_above() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_with_hodl_limit_above_from_owner() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // enable hodl limit
@@ -308,7 +322,7 @@ fn test_transfer_with_hodl_limit_above_from_owner() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_with_hodl_limit_above_to_pool() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // enable hodl limit
@@ -338,7 +352,7 @@ fn test_transfer_with_hodl_limit_above_to_pool() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_from() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // approve owner to spend on himself
     dispatcher.approve(spender: constants::OWNER(), amount: constants::SUPPLY);
@@ -365,7 +379,7 @@ fn test_transfer_from() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_from_with_hodl_limit() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100; // 1%
 
     // approve owner to spend on himself
@@ -398,7 +412,7 @@ fn test_transfer_from_with_hodl_limit() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('1% Hodl limit reached', 'ENTRYPOINT_FAILED'))]
 fn test_transfer_from_with_hodl_limit_above() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // approve owner to spend on himself
@@ -423,7 +437,7 @@ fn test_transfer_from_with_hodl_limit_above() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_from_with_hodl_limit_above_from_owner() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // approve owner to spend on himself
@@ -452,7 +466,7 @@ fn test_transfer_from_with_hodl_limit_above_from_owner() {
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_from_with_hodl_limit_above_to_pool() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // approve owner to spend on himself
@@ -489,7 +503,7 @@ fn test_transfer_from_with_hodl_limit_above_to_pool() {
 #[test]
 #[available_gas(20000000)]
 fn test_transferFrom() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
 
     // approve owner to spend on himself
     dispatcher.approve(spender: constants::OWNER(), amount: constants::SUPPLY);
@@ -516,7 +530,7 @@ fn test_transferFrom() {
 #[test]
 #[available_gas(20000000)]
 fn test_transferFrom_with_hodl_limit() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100; // 1%
 
     // approve owner to spend on himself
@@ -549,7 +563,7 @@ fn test_transferFrom_with_hodl_limit() {
 #[available_gas(20000000)]
 #[should_panic(expected: ('1% Hodl limit reached', 'ENTRYPOINT_FAILED'))]
 fn test_transferFrom_with_hodl_limit_above() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // approve owner to spend on himself
@@ -574,7 +588,7 @@ fn test_transferFrom_with_hodl_limit_above() {
 #[test]
 #[available_gas(20000000)]
 fn test_transferFrom_with_hodl_limit_above_from_owner() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // approve owner to spend on himself
@@ -603,7 +617,7 @@ fn test_transferFrom_with_hodl_limit_above_from_owner() {
 #[test]
 #[available_gas(20000000)]
 fn test_transferFrom_with_hodl_limit_above_to_pool() {
-    let mut dispatcher = setup_dispatcher();
+    let mut dispatcher = setup_launched_dispatcher();
     let value = constants::SUPPLY / 100 + 1; // 1% + 1
 
     // approve owner to spend on himself
@@ -631,6 +645,56 @@ fn test_transferFrom_with_hodl_limit_above_to_pool() {
         'Should equal SUPPLY - VALUE'
     );
     assert(dispatcher.balance_of(constants::POOL()) == value, 'Should equal VALUE');
+}
+
+//
+// Launch
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_launch() {
+    let mut dispatcher = setup_dispatcher();
+
+    assert(!dispatcher.launched(), 'Should not be launched');
+
+    dispatcher.launch(vesting_period: 0);
+
+    assert(dispatcher.launched(), 'Should be launched');
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Token already launched', 'ENTRYPOINT_FAILED'))]
+fn test_launch_twice() {
+    let mut dispatcher = setup_dispatcher();
+
+    dispatcher.launch(vesting_period: 0);
+    dispatcher.launch(vesting_period: 0);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Caller is the zero address', 'ENTRYPOINT_FAILED'))]
+fn test_launch_from_zero() {
+    let mut dispatcher = setup_dispatcher();
+
+    // execute as zero
+    testing::set_contract_address(constants::ZERO());
+
+    dispatcher.launch(vesting_period: 0);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Caller is not the owner', 'ENTRYPOINT_FAILED'))]
+fn test_launch_from_unauthorized() {
+    let mut dispatcher = setup_dispatcher();
+
+    // execute as other
+    testing::set_contract_address(constants::OTHER());
+
+    dispatcher.launch(vesting_period: 0);
 }
 
 //
