@@ -1,6 +1,7 @@
 #[starknet::contract]
 mod FullFeaturesContract {
-    use starknet::ContractAddress;
+    use wagmi::wagmi::interface::IHodlLimit;
+use starknet::ContractAddress;
     use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::interface::{IERC20, IERC20CamelOnly};
     use openzeppelin::access::ownable::interface::IOwnable;
@@ -169,9 +170,11 @@ mod FullFeaturesContract {
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
             let sender = starknet::get_caller_address();
-            self._check_hodl_limit(:sender, :recipient, :amount);
 
             let ret = self.erc20.transfer(:recipient, :amount);
+
+            // hodl limit check
+            self._check_hodl_limit(:sender, :recipient);
 
             // vesting check
             self._check_for_vesting(:sender);
@@ -185,9 +188,10 @@ mod FullFeaturesContract {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            self._check_hodl_limit(:sender, :recipient, :amount);
-
             let ret = self.erc20.transfer_from(:sender, :recipient, :amount);
+
+            // hodl limit check
+            self._check_hodl_limit(:sender, :recipient);
 
             // vesting check
             self._check_for_vesting(:sender);
@@ -216,9 +220,11 @@ mod FullFeaturesContract {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            self._check_hodl_limit(:sender, :recipient, :amount);
 
             let ret = self.erc20.transferFrom(:sender, :recipient, :amount);
+
+            // hodl limit check
+            self._check_hodl_limit(:sender, :recipient);
 
             // vesting check
             self._check_for_vesting(:sender);
@@ -237,22 +243,21 @@ mod FullFeaturesContract {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
         ) {
             let sender_is_owner = self.ownable.owner() == sender;
 
             // check hodl limit
             if (!sender_is_owner) {
-                let recipient_balance = self.erc20.balance_of(account: recipient) + amount;
-                self.hodl_limit._check_hodl_limit(:recipient, :recipient_balance);
+                self.hodl_limit._check_hodl_limit(:recipient);
             }
         }
 
         fn _check_for_vesting(ref self: ContractState, sender: ContractAddress) {
             let sender_is_owner = self.ownable.owner() == sender;
+            let sender_is_pool = self.is_pool(sender);
 
             // check hodl limit
-            if (!sender_is_owner) {
+            if (!sender_is_owner && !sender_is_pool) {
                 self.snapshot_loader._check_for_vesting(account: sender);
             }
         }

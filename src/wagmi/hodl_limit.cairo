@@ -50,7 +50,6 @@ mod HodlLimitComponent {
         fn _check_hodl_limit(
             ref self: ComponentState<TContractState>,
             recipient: ContractAddress,
-            recipient_balance: u256
         ) {
             let is_hodl_limit_enabled = self._is_hodl_limit_enabled.read();
 
@@ -58,7 +57,8 @@ mod HodlLimitComponent {
                 let erc20_component = get_dep_component!(self, ERC20);
 
                 let max_amount = erc20_component.total_supply() / (10_000 / HODL_LIMIT).into();
-                assert(recipient_balance <= max_amount, Errors::HODL_LIMIT_REACHED);
+                let balance = erc20_component.balance_of(account: recipient);
+                assert(balance <= max_amount, Errors::HODL_LIMIT_REACHED);
             }
         }
 
