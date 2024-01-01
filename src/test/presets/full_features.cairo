@@ -255,6 +255,72 @@ fn test_transfer() {
     assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
 }
 
+//
+// Transfer from
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_transfer_from() {
+    let mut dispatcher = setup_launched_dispatcher();
+
+    // approve owner to spend on himself
+    dispatcher.approve(spender: constants::OWNER(), amount: constants::SUPPLY);
+
+    // transfer
+    assert(
+        dispatcher
+            .transfer_from(
+                sender: constants::OWNER(),
+                recipient: constants::RECIPIENT(),
+                amount: constants::VALUE
+            ),
+        'Should return true'
+    );
+
+    // check balances
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
+        'Should equal SUPPLY - VALUE'
+    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
+}
+
+//
+// TransferFrom
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_transferFrom() {
+    let mut dispatcher = setup_launched_dispatcher();
+
+    // approve owner to spend on himself
+    dispatcher.approve(spender: constants::OWNER(), amount: constants::SUPPLY);
+
+    // transfer
+    assert(
+        dispatcher
+            .transferFrom(
+                sender: constants::OWNER(),
+                recipient: constants::RECIPIENT(),
+                amount: constants::VALUE
+            ),
+        'Should return true'
+    );
+
+    // check balances
+    assert(
+        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
+        'Should equal SUPPLY - VALUE'
+    );
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
+}
+
+//
+// Hodl Limit Transfer
+//
+
 #[test]
 #[available_gas(20000000)]
 fn test_transfer_with_hodl_limit() {
@@ -348,35 +414,8 @@ fn test_transfer_with_hodl_limit_above_to_pool() {
 }
 
 //
-// Transfer from
+// Hodl Limit Transfer from
 //
-
-#[test]
-#[available_gas(20000000)]
-fn test_transfer_from() {
-    let mut dispatcher = setup_launched_dispatcher();
-
-    // approve owner to spend on himself
-    dispatcher.approve(spender: constants::OWNER(), amount: constants::SUPPLY);
-
-    // transfer
-    assert(
-        dispatcher
-            .transfer_from(
-                sender: constants::OWNER(),
-                recipient: constants::RECIPIENT(),
-                amount: constants::VALUE
-            ),
-        'Should return true'
-    );
-
-    // check balances
-    assert(
-        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
-        'Should equal SUPPLY - VALUE'
-    );
-    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
-}
 
 #[test]
 #[available_gas(20000000)]
@@ -499,35 +538,8 @@ fn test_transfer_from_with_hodl_limit_above_to_pool() {
 }
 
 //
-// TransferFrom
+// Hodl Limit TransferFrom
 //
-
-#[test]
-#[available_gas(20000000)]
-fn test_transferFrom() {
-    let mut dispatcher = setup_launched_dispatcher();
-
-    // approve owner to spend on himself
-    dispatcher.approve(spender: constants::OWNER(), amount: constants::SUPPLY);
-
-    // transfer
-    assert(
-        dispatcher
-            .transferFrom(
-                sender: constants::OWNER(),
-                recipient: constants::RECIPIENT(),
-                amount: constants::VALUE
-            ),
-        'Should return true'
-    );
-
-    // check balances
-    assert(
-        dispatcher.balance_of(constants::OWNER()) == constants::SUPPLY - constants::VALUE,
-        'Should equal SUPPLY - VALUE'
-    );
-    assert(dispatcher.balance_of(constants::RECIPIENT()) == constants::VALUE, 'Should equal VALUE');
-}
 
 #[test]
 #[available_gas(20000000)]
@@ -832,6 +844,13 @@ fn test_vested_balance_of() {
     // check vested balance after
     assert(dispatcher.vested_balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should be VALUE');
+
+    // update timestamp (after vesting limit)
+    testing::set_block_timestamp(constants::TIMESTAMP + 11);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should be VALUE');
 }
 
 #[test]
@@ -897,6 +916,237 @@ fn test_vested_balance_of_pool_after_mint() {
     // check vested balance after
     assert(dispatcher.vested_balance_of(constants::POOL()).is_zero(), 'Should be null');
     assert(dispatcher.balance_of(constants::POOL()) == value, 'Should equal VALUE');
+}
+
+//
+// Snapshot loader Transfer
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_transfer_below_vesting_limit() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // transfer
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value / 2);
+
+    // check balances
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 2, 'Should equal VALUE / 2');
+    assert(dispatcher.balance_of(constants::OTHER()).is_zero(), 'Should be zero');
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Vesting limit reached', 'ENTRYPOINT_FAILED'))]
+fn test_transfer_above_vesting_limit() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // transfer
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value / 2 + 1);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Vesting limit reached', 'ENTRYPOINT_FAILED'))]
+fn test_transfer_below_vesting_limit_twice() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // transfer
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.transfer(recipient: constants::RECIPIENT(), amount: value / 2);
+    dispatcher.transfer(recipient: constants::RECIPIENT(), amount: 1);
+}
+
+//
+// Snapshot loader Transfer from
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_transfer_from_below_vesting_limit() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // approve other to spend on himself
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.approve(spender: constants::OTHER(), amount: value);
+
+    // transfer
+    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
+
+    // check balances
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 2, 'Should equal VALUE / 2');
+    assert(dispatcher.balance_of(constants::OTHER()).is_zero(), 'Should be zero');
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Vesting limit reached', 'ENTRYPOINT_FAILED'))]
+fn test_transfer_from_above_vesting_limit() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // approve other to spend on himself
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.approve(spender: constants::OTHER(), amount: value);
+
+    // transfer
+    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2 + 1);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Vesting limit reached', 'ENTRYPOINT_FAILED'))]
+fn test_transfer_from_below_vesting_limit_twice() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // approve other to spend on himself
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.approve(spender: constants::OTHER(), amount: value);
+
+    // transfer
+    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
+    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: 1);
+}
+
+//
+// Snapshot loader TransferFrom
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_transferFrom_below_vesting_limit() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // approve other to spend on himself
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.approve(spender: constants::OTHER(), amount: value);
+
+    // transfer
+    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
+
+    // check balances
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 2, 'Should equal VALUE / 2');
+    assert(dispatcher.balance_of(constants::OTHER()).is_zero(), 'Should be zero');
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Vesting limit reached', 'ENTRYPOINT_FAILED'))]
+fn test_transferFrom_above_vesting_limit() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // approve other to spend on himself
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.approve(spender: constants::OTHER(), amount: value);
+
+    // transfer
+    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2 + 1);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Vesting limit reached', 'ENTRYPOINT_FAILED'))]
+fn test_transferFrom_below_vesting_limit_twice() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 100;
+
+    // mint
+    dispatcher.mint(recipient: constants::OTHER(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // skip some time
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // approve other to spend on himself
+    testing::set_contract_address(constants::OTHER());
+    dispatcher.approve(spender: constants::OTHER(), amount: value);
+
+    // transfer
+    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
+    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: 1);
 }
 
 //
