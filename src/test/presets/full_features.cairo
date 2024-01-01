@@ -26,7 +26,13 @@ fn setup_dispatcher_with_event() -> FullFeaturesABIDispatcher {
 
     let address = utils::deploy(FullFeaturesContract::TEST_CLASS_HASH, calldata);
 
-    FullFeaturesABIDispatcher { contract_address: address }
+    let dispatcher = FullFeaturesABIDispatcher { contract_address: address };
+
+    // launch
+    testing::set_block_timestamp(constants::TIMESTAMP);
+    dispatcher.launch(vesting_period: 0);
+
+    dispatcher
 }
 
 fn setup_dispatcher() -> FullFeaturesABIDispatcher {

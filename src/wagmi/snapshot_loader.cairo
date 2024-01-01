@@ -100,7 +100,7 @@ mod SnapshotLoaderComponent {
             let vested_balance = self.vested_balance(:account);
             let balance = erc20_component.balance_of(:account);
 
-            assert(vested_balance >= balance, Errors::VESTING_LIMIT_REACHED);
+            assert(balance >= vested_balance, Errors::VESTING_LIMIT_REACHED);
         }
     }
 }

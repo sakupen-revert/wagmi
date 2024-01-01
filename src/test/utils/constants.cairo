@@ -5,6 +5,7 @@ const SYMBOL: felt252 = 'SYMBOL';
 const DECIMALS: u8 = 18_u8;
 const SUPPLY: u256 = 2000;
 const VALUE: u256 = 300;
+const TIMESTAMP: u64 = '1993';
 
 fn ZERO() -> ContractAddress {
     contract_address_const::<0>()

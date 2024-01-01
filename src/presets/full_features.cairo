@@ -1,6 +1,5 @@
 #[starknet::contract]
 mod FullFeaturesContract {
-    use core::debug::PrintTrait;
     use starknet::ContractAddress;
     use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::interface::{IERC20, IERC20CamelOnly};
@@ -11,9 +10,9 @@ mod FullFeaturesContract {
 
     use wagmi::wagmi::hodl_limit::HodlLimitComponent;
     use wagmi::wagmi::snapshot_loader::SnapshotLoaderComponent;
-
     use wagmi::wagmi::hodl_limit::HodlLimitComponent::InternalTrait as HodlLimitInternalTrait;
     use wagmi::wagmi::snapshot_loader::SnapshotLoaderComponent::InternalTrait as SnapshotLoaderInternalTrait;
+    use wagmi::wagmi::interface::ISnapshotLoader;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     component!(path: HodlLimitComponent, storage: hodl_limit, event: HodlLimitEvent);
@@ -159,7 +158,7 @@ mod FullFeaturesContract {
         }
 
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.balance_of(:account)
+            self.erc20.balance_of(:account) - self.vested_balance(:account)
         }
 
         fn allowance(
@@ -175,7 +174,7 @@ mod FullFeaturesContract {
             let ret = self.erc20.transfer(:recipient, :amount);
 
             // vesting check
-            self.snapshot_loader._check_for_vesting(account: recipient);
+            self._check_for_vesting(:sender);
 
             ret
         }
@@ -191,7 +190,7 @@ mod FullFeaturesContract {
             let ret = self.erc20.transfer_from(:sender, :recipient, :amount);
 
             // vesting check
-            self.snapshot_loader._check_for_vesting(account: recipient);
+            self._check_for_vesting(:sender);
 
             ret
         }
@@ -208,7 +207,7 @@ mod FullFeaturesContract {
         }
 
         fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.balanceOf(:account)
+            self.erc20.balanceOf(:account) - self.vested_balance(:account)
         }
 
         fn transferFrom(
@@ -222,7 +221,7 @@ mod FullFeaturesContract {
             let ret = self.erc20.transferFrom(:sender, :recipient, :amount);
 
             // vesting check
-            self.snapshot_loader._check_for_vesting(account: recipient);
+            self._check_for_vesting(:sender);
 
             ret
         }
@@ -246,6 +245,15 @@ mod FullFeaturesContract {
             if (!sender_is_owner) {
                 let recipient_balance = self.erc20.balance_of(account: recipient) + amount;
                 self.hodl_limit._check_hodl_limit(:recipient, :recipient_balance);
+            }
+        }
+
+        fn _check_for_vesting(ref self: ContractState, sender: ContractAddress) {
+            let sender_is_owner = self.ownable.owner() == sender;
+
+            // check hodl limit
+            if (!sender_is_owner) {
+                self.snapshot_loader._check_for_vesting(account: sender);
             }
         }
     }
