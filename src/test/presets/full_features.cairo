@@ -1,3 +1,4 @@
+use core::zeroable::Zeroable;
 use starknet::{ContractAddress, testing};
 use openzeppelin::utils::serde::SerializedAppend;
 use openzeppelin::token::erc20::ERC20Component::Transfer;
@@ -695,6 +696,62 @@ fn test_launch_from_unauthorized() {
     testing::set_contract_address(constants::OTHER());
 
     dispatcher.launch(vesting_period: 0);
+}
+
+//
+// Mint
+//
+
+#[test]
+#[available_gas(20000000)]
+fn test_mint() {
+    let mut dispatcher = setup_dispatcher();
+    let value = constants::VALUE;
+
+    // check balance before
+    assert(dispatcher.balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+
+    // mint
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: value);
+
+    // launch to remove vesting balance
+    dispatcher.launch(vesting_period: 0);
+
+    // check balance after
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == value, 'Should equal VALUE');
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Token already launched', 'ENTRYPOINT_FAILED'))]
+fn test_mint_after_launch() {
+    let mut dispatcher = setup_launched_dispatcher();
+
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: constants::VALUE);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Caller is the zero address', 'ENTRYPOINT_FAILED'))]
+fn test_mint_from_zero() {
+    let mut dispatcher = setup_dispatcher();
+
+    // execute as zero
+    testing::set_contract_address(constants::ZERO());
+
+    dispatcher.mint(recipient: constants::OTHER(), amount: constants::VALUE);
+}
+
+#[test]
+#[available_gas(20000000)]
+#[should_panic(expected: ('Caller is not the owner', 'ENTRYPOINT_FAILED'))]
+fn test_mint_from_unauthorized() {
+    let mut dispatcher = setup_dispatcher();
+
+    // execute as other
+    testing::set_contract_address(constants::OTHER());
+
+    dispatcher.mint(recipient: constants::OTHER(), amount: constants::VALUE);
 }
 
 //
