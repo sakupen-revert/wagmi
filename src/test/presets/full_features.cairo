@@ -855,6 +855,36 @@ fn test_vested_balance_of() {
 
 #[test]
 #[available_gas(20000000)]
+fn test_vested_balance_of_with_remaining() {
+    let mut dispatcher = setup_dispatcher();
+    let value = 5;
+
+    // check vested balance before
+    assert(dispatcher.balance_of(constants::RECIPIENT()).is_zero(), 'Should be null');
+
+    // mint
+    dispatcher.mint(recipient: constants::RECIPIENT(), amount: value);
+
+    // launch
+    dispatcher.launch(vesting_period: 10);
+
+    // update timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP + 5);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::RECIPIENT()) == 2, 'Should equal 2');
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == 3, 'Should equal 3');
+
+    // update timestamp
+    testing::set_block_timestamp(constants::TIMESTAMP + 6);
+
+    // check vested balance after
+    assert(dispatcher.vested_balance_of(constants::RECIPIENT()) == 2, 'Should equal 2');
+    assert(dispatcher.balance_of(constants::RECIPIENT()) == 3, 'Should equal 3');
+}
+
+#[test]
+#[available_gas(20000000)]
 fn test_vested_balance_of_owner() {
     let mut dispatcher = setup_dispatcher();
 
@@ -1013,7 +1043,10 @@ fn test_transfer_from_below_vesting_limit() {
     dispatcher.approve(spender: constants::OTHER(), amount: value);
 
     // transfer
-    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
+    dispatcher
+        .transfer_from(
+            sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2
+        );
 
     // check balances
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 2, 'Should equal VALUE / 2');
@@ -1041,7 +1074,10 @@ fn test_transfer_from_above_vesting_limit() {
     dispatcher.approve(spender: constants::OTHER(), amount: value);
 
     // transfer
-    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2 + 1);
+    dispatcher
+        .transfer_from(
+            sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2 + 1
+        );
 }
 
 #[test]
@@ -1065,8 +1101,12 @@ fn test_transfer_from_below_vesting_limit_twice() {
     dispatcher.approve(spender: constants::OTHER(), amount: value);
 
     // transfer
-    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
-    dispatcher.transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: 1);
+    dispatcher
+        .transfer_from(
+            sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2
+        );
+    dispatcher
+        .transfer_from(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: 1);
 }
 
 //
@@ -1093,7 +1133,10 @@ fn test_transferFrom_below_vesting_limit() {
     dispatcher.approve(spender: constants::OTHER(), amount: value);
 
     // transfer
-    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
+    dispatcher
+        .transferFrom(
+            sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2
+        );
 
     // check balances
     assert(dispatcher.balance_of(constants::RECIPIENT()) == value / 2, 'Should equal VALUE / 2');
@@ -1121,7 +1164,10 @@ fn test_transferFrom_above_vesting_limit() {
     dispatcher.approve(spender: constants::OTHER(), amount: value);
 
     // transfer
-    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2 + 1);
+    dispatcher
+        .transferFrom(
+            sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2 + 1
+        );
 }
 
 #[test]
@@ -1145,8 +1191,12 @@ fn test_transferFrom_below_vesting_limit_twice() {
     dispatcher.approve(spender: constants::OTHER(), amount: value);
 
     // transfer
-    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2);
-    dispatcher.transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: 1);
+    dispatcher
+        .transferFrom(
+            sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: value / 2
+        );
+    dispatcher
+        .transferFrom(sender: constants::OTHER(), recipient: constants::RECIPIENT(), amount: 1);
 }
 
 //
